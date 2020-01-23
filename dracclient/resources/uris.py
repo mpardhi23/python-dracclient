@@ -97,6 +97,12 @@ DCIM_PhysicalDiskView = ('http://schemas.dell.com/wbem/wscim/1/cim-schema/2/'
 DCIM_RAIDService = ('http://schemas.dell.com/wbem/wscim/1/cim-schema/2/'
                     'DCIM_RAIDService')
 
+DCIM_RAIDEnumeration = ('http://schemas.dell.com/wbem/wscim/1/cim-schema/2/'
+                        'DCIM_RAIDEnumeration')
+
+DCIM_RAIDString = ('http://schemas.dell.com/wbem/wscim/1/cim-schema/2/'
+                   'DCIM_RAIDString')
+
 DCIM_SystemView = ('http://schemas.dell.com/wbem/wscim/1/cim-schema/2/'
                    'DCIM_SystemView')
 

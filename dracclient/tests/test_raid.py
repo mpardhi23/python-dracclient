@@ -16,6 +16,7 @@ import collections
 import lxml.etree
 import mock
 import random
+import re
 import requests_mock
 
 import dracclient.client
@@ -111,6 +112,217 @@ class ClientRAIDManagementTestCase(base.BaseTest):
             raid_status='ready',
             sas_address='500056B37789ABE3',
             device_protocol=None)
+
+    @mock.patch.object(dracclient.client.WSManClient,
+                       'wait_until_idrac_is_ready', spec_set=True,
+                       autospec=True)
+    def test_list_raid_cntrl_settings_by_instance_id(
+            self, mock_requests,
+            mock_wait_until_idrac_is_ready):
+        expected_enum_attr = raid.RAIDEnumerableAttribute(
+            name='RAIDCurrentControllerMode',
+            instance_id='RAID.Integrated.1-1:RAIDCurrentControllerMode',  # noqa
+            read_only=True,
+            current_value='RAID',
+            pending_value=None,
+            fqdd='RAID.Integrated.1-1',
+            possible_values=['RAID', 'Enhanced HBA'])
+        expected_string_attr = raid.RAIDStringAttribute(
+            name='RAIDEffectiveSASAddress',
+            instance_id='Enclosure.Internal.0-1:RAID.Integrated.1-1:RAIDEffectiveSASAddress',  # noqa
+            read_only=True,
+            current_value='500056B3239C1AFD',
+            pending_value=None,
+            fqdd='Enclosure.Internal.0-1:RAID.Integrated.1-1',
+            min_length=16,
+            max_length=16)
+        mock_requests.post('https://1.2.3.4:443/wsman', [
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDEnumeration]['ok']},
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDString]['ok']}])
+        raid_settings = self.drac_client.list_raid_cntrl_settings(
+                by_name=False)
+        self.assertEqual(179, len(raid_settings))
+        # enumerable attribute
+        self.assertIn(
+            'RAID.Integrated.1-1:RAIDCurrentControllerMode',  # noqa
+            raid_settings)
+        self.assertEqual(expected_enum_attr, raid_settings[
+                         'RAID.Integrated.1-1:RAIDCurrentControllerMode'])  # noqa
+        # string attribute
+        self.assertIn(
+            'Enclosure.Internal.0-1:RAID.Integrated.1-1:RAIDEffectiveSASAddress',  # noqa
+            raid_settings)
+        self.assertEqual(expected_string_attr,
+                         raid_settings['Enclosure.Internal.0-1:RAID.Integrated.1-1:RAIDEffectiveSASAddress'])  # noqa
+
+    @mock.patch.object(dracclient.client.WSManClient,
+                       'wait_until_idrac_is_ready', spec_set=True,
+                       autospec=True)
+    def test_list_raid_cntrl_settings_by_name(
+            self, mock_requests,
+            mock_wait_until_idrac_is_ready):
+        expected_enum_attr = raid.RAIDEnumerableAttribute(
+            name='RAIDCurrentControllerMode',
+            instance_id='RAID.Integrated.1-1:RAIDCurrentControllerMode',  # noqa
+            read_only=True,
+            current_value='RAID',
+            pending_value=None,
+            fqdd='RAID.Integrated.1-1',
+            possible_values=['RAID', 'Enhanced HBA'])
+        expected_string_attr = raid.RAIDStringAttribute(
+            name='RAIDEffectiveSASAddress',
+            instance_id='Enclosure.Internal.0-1:RAID.Integrated.1-1:RAIDEffectiveSASAddress',  # noqa
+            read_only=True,
+            current_value='500056B3239C1AFD',
+            pending_value=None,
+            fqdd='Enclosure.Internal.0-1:RAID.Integrated.1-1',
+            min_length=16,
+            max_length=16)
+
+        mock_requests.post('https://1.2.3.4:443/wsman', [
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDEnumeration]['ok']},
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDString]['ok']}])
+
+        raid_settings = self.drac_client.list_raid_cntrl_settings(
+                by_name=True)
+
+        self.assertEqual(27, len(raid_settings))
+
+        # enumerable attribute
+        self.assertIn(
+            'RAIDCurrentControllerMode',
+            raid_settings)
+        self.assertEqual(expected_enum_attr, raid_settings[
+                         'RAIDCurrentControllerMode'])
+        # string attribute
+        self.assertIn(
+            'RAIDEffectiveSASAddress',
+            raid_settings)
+        self.assertEqual(expected_string_attr,
+                         raid_settings['RAIDEffectiveSASAddress'])
+
+    @mock.patch.object(dracclient.client.WSManClient,
+                       'wait_until_idrac_is_ready', spec_set=True,
+                       autospec=True)
+    def test_get_raid_controller_mode(self, mock_requests,
+                                      mock_wait_until_idrac_is_ready):
+
+        mock_requests.post('https://1.2.3.4:443/wsman', [
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDEnumeration]['ok']},
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDString]['ok']}])
+
+        raid_cntrl_mode = self.drac_client.get_raid_controller_mode()
+        self.assertEqual('RAID', raid_cntrl_mode)
+
+    @mock.patch.object(dracclient.client.WSManClient,
+                       'wait_until_idrac_is_ready', spec_set=True,
+                       autospec=True)
+    @mock.patch.object(dracclient.client.WSManClient,
+                       'invoke', spec_set=True,
+                       autospec=True)
+    def test_set_raid_cntrl_settings(self, mock_requests,
+                                     mock_invoke,
+                                     mock_wait_until_idrac_is_ready):
+
+        mock_requests.post('https://1.2.3.4:443/wsman', [
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDEnumeration]['ok']},
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDString]['ok']}])
+
+        mock_invoke.return_value = lxml.etree.fromstring(
+            test_utils.RAIDInvocations[uris.DCIM_RAIDService][
+                'SetAttributes']['ok'])
+
+        result = self.drac_client.set_raid_cntrl_settings(
+            {'RAIDRequestedControllerMode': 'RAID'},
+            self.raid_controller_fqdd)
+
+        self.assertEqual({'is_commit_required': True,
+                          'is_reboot_required': constants.RebootRequired.true
+                          },
+                         result)
+
+    @mock.patch.object(dracclient.client.WSManClient,
+                       'wait_until_idrac_is_ready', spec_set=True,
+                       autospec=True)
+    def test_set_raid_cntrl_settings_with_unknown_attr(
+            self, mock_requests, mock_wait_until_idrac_is_ready):
+        mock_requests.post('https://1.2.3.4:443/wsman', [
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDEnumeration]['ok']},
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDString]['ok']},
+            {'text': test_utils.RAIDInvocations[
+                uris.DCIM_RAIDService]['SetAttributes']['error']}])
+
+        self.assertRaises(exceptions.InvalidParameterValue,
+                          self.drac_client.set_raid_cntrl_settings,
+                          {'foo': 'bar'}, self.raid_controller_fqdd)
+
+    @mock.patch.object(dracclient.client.WSManClient,
+                       'wait_until_idrac_is_ready', spec_set=True,
+                       autospec=True)
+    def test_set_raid_cntrl_settings_with_unchanged_attr(
+            self, mock_requests, mock_wait_until_idrac_is_ready):
+        mock_requests.post('https://1.2.3.4:443/wsman', [
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDEnumeration]['ok']},
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDString]['ok']}])
+
+        result = self.drac_client.set_raid_cntrl_settings(
+            {'RAIDdefaultWritePolicy': 'WriteBack'},
+            self.raid_controller_fqdd)
+
+        self.assertEqual({'is_commit_required': False,
+                          'is_reboot_required':
+                          constants.RebootRequired.false},
+                         result)
+
+    @mock.patch.object(dracclient.client.WSManClient,
+                       'wait_until_idrac_is_ready', spec_set=True,
+                       autospec=True)
+    def test_set_raid_cntrl_settings_with_readonly_attr(
+            self, mock_requests, mock_wait_until_idrac_is_ready):
+        expected_message = ("Cannot set read-only RAID attributes: "
+                            "['RAIDCurrentControllerMode'].")
+        mock_requests.post('https://1.2.3.4:443/wsman', [
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDEnumeration]['ok']},
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDString]['ok']}])
+
+        self.assertRaisesRegexp(
+            exceptions.DRACOperationFailed, re.escape(expected_message),
+            self.drac_client.set_raid_cntrl_settings,
+            {'RAIDCurrentControllerMode': 'Enhanced HBA'},
+            self.raid_controller_fqdd)
+
+    @mock.patch.object(dracclient.client.WSManClient,
+                       'wait_until_idrac_is_ready', spec_set=True,
+                       autospec=True)
+    def test_set_raid_cntrl_settings_with_incorrect_enum_value(
+            self, mock_requests, mock_wait_until_idrac_is_ready):
+        expected_message = ("Attribute 'RAIDRequestedControllerMode' cannot "
+                            "be set to value 'foo'. It must be in "
+                            "['RAID', 'Enhanced HBA', 'None'].")
+
+        mock_requests.post('https://1.2.3.4:443/wsman', [
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDEnumeration]['ok']},
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDString]['ok']}])
+        self.assertRaisesRegexp(
+            exceptions.DRACOperationFailed, re.escape(expected_message),
+            self.drac_client.set_raid_cntrl_settings,
+            {'RAIDRequestedControllerMode': 'foo'}, self.raid_controller_fqdd)
 
     @mock.patch.object(dracclient.client.WSManClient,
                        'wait_until_idrac_is_ready', spec_set=True,

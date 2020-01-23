@@ -753,6 +753,55 @@ class DRACClient(object):
         """
         return self._raid_mgmt.list_raid_controllers()
 
+    def list_raid_cntrl_settings(self, by_name=False):
+        """List the RAID configuration settings
+
+        :param by_name: Controls whether returned dictionary uses RAID
+                        attribute name or instance_id as key.
+        :returns: a dictionary with the RAID settings using InstanceID as the
+                  key. The attributes are either RAIDEnumerableAttribute,
+                  RAIDStringAttribute objects.
+        :raises: WSManRequestFailure on request failures
+        :raises: WSManInvalidResponse when receiving invalid response
+        :raises: DRACOperationFailed on error reported back by the DRAC
+                 interface
+        """
+        return self._raid_mgmt.list_raid_cntrl_settings(by_name)
+
+    def set_raid_cntrl_settings(self, settings, raid_fqdd):
+        """Sets the RAID configuration
+
+        It sets the pending_value parameter for each of the attributes
+        passed in. For the values to be applied, a config job must
+        be created.
+        :param settings: a dictionary containing the proposed values, with
+                         each key being the name of attribute and the value
+                         being the proposed value.
+        :returns: a dictionary containing:
+                 - The is_commit_required key with a boolean value indicating
+                   whether a config job must be created for the values to be
+                   applied.
+                 - The is_reboot_required key with a RebootRequired enumerated
+                   value indicating whether the server must be rebooted for the
+                   values to be applied. Possible values are true and false.
+        :raises: WSManRequestFailure on request failures
+        :raises: WSManInvalidResponse when receiving invalid response
+        :raises: DRACOperationFailed on error reported back by the DRAC
+                 interface
+        """
+        return self._raid_mgmt.set_raid_cntrl_settings(settings, raid_fqdd)
+
+    def get_raid_controller_mode(self):
+        """Returns the current RAID controller mode
+
+        :returns: the current RAIDController mode
+        :raises: WSManRequestFailure on request failures
+        :raises: WSManInvalidResponse when receiving invalid response
+        :raises: DRACOperationFailed on error reported back by the DRAC
+                 interface
+        """
+        return self._raid_mgmt.get_raid_controller_mode()
+
     def list_virtual_disks(self):
         """Returns the list of RAID arrays
 

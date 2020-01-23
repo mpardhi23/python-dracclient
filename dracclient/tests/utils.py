@@ -247,6 +247,12 @@ RAIDEnumerations = {
     },
     uris.DCIM_VirtualDiskView: {
         'ok': load_wsman_xml('virtual_disk_view-enum-ok')
+    },
+    uris.DCIM_RAIDEnumeration: {
+        'ok': load_wsman_xml('raid_enumeration-enum-ok')
+    },
+    uris.DCIM_RAIDString: {
+        'ok': load_wsman_xml('raid_string-enum-ok')
     }
 }
 
@@ -283,6 +289,12 @@ RAIDInvocations = {
                 'raid_service-invoke-clear_foreign_config-no_foreign_drive'),
             'invalid_controller_id': load_wsman_xml(
                 'raid_service-invoke-clear_foreign_config-invalid_controller'),
+        },
+        'SetAttributes': {
+            'ok': load_wsman_xml(
+                'raid_service-invoke-set_attributes-ok'),
+            'error': load_wsman_xml(
+                'raid_service-invoke-set_attributes-error'),
         }
     }
 }

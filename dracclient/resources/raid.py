@@ -101,13 +101,12 @@ NO_FOREIGN_DRIVE = "STOR018"
 class RAIDAttribute(object):
     """Generic RAID attribute class"""
 
-    def __init__(self, name, instance_id, current_value, pending_value,
+    def __init__(self, name, instance_id, pending_value,
                  read_only, fqdd):
         """Creates RAIDAttribute object
 
         :param name: name of the RAID attribute
         :param instance_id: InstanceID of the RAID attribute
-        :param current_value: current value of the RAID attribute
         :param pending_value: pending value of the RAID attribute, reflecting
                 an unprocessed change (eg. config job not completed)
         :param read_only: indicates whether this RAID attribute can be changed
@@ -116,7 +115,6 @@ class RAIDAttribute(object):
 
         self.name = name
         self.instance_id = instance_id
-        self.current_value = current_value
         self.pending_value = pending_value
         self.read_only = read_only
         self.fqdd = fqdd
@@ -132,8 +130,6 @@ class RAIDAttribute(object):
             raid_attr_xml, namespace, 'AttributeName')
         instance_id = utils.get_wsman_resource_attr(
             raid_attr_xml, namespace, 'InstanceID')
-        current_value = utils.get_wsman_resource_attr(
-            raid_attr_xml, namespace, 'CurrentValue', nullable=True)
         pending_value = utils.get_wsman_resource_attr(
             raid_attr_xml, namespace, 'PendingValue', nullable=True)
         read_only = utils.get_wsman_resource_attr(
@@ -141,7 +137,7 @@ class RAIDAttribute(object):
         fqdd = utils.get_wsman_resource_attr(
             raid_attr_xml, namespace, 'FQDD')
 
-        return cls(name, instance_id, current_value, pending_value,
+        return cls(name, instance_id, pending_value,
                    (read_only == 'true'), fqdd)
 
 
@@ -150,24 +146,27 @@ class RAIDEnumerableAttribute(RAIDAttribute):
 
     namespace = uris.DCIM_RAIDEnumeration
 
-    def __init__(self, name, instance_id, current_value, pending_value,
-                 read_only, fqdd, possible_values):
+    def __init__(self, name, instance_id, pending_value,
+                 read_only, fqdd, current_value, possible_values):
         """Creates RAIDEnumerableAttribute object
 
         :param name: name of the RAID attribute
-        :param current_value: current value of the RAID attribute
+        :param instance_id: InstanceID of the RAID attribute
         :param pending_value: pending value of the RAID attribute, reflecting
                 an unprocessed change (eg. config job not completed)
         :param read_only: indicates whether this RAID attribute can be changed
         :param fqdd: Fully Qualified Device Description of the RAID
                 Attribute
+        :param current_value: list containing the current values of the
+                RAID attribute
         :param possible_values: list containing the allowed values for the RAID
                 attribute
         """
         super(RAIDEnumerableAttribute, self).__init__(name, instance_id,
-                                                      current_value,
                                                       pending_value,
                                                       read_only, fqdd)
+
+        self.current_value = current_value
         self.possible_values = possible_values
 
     @classmethod
@@ -175,14 +174,18 @@ class RAIDEnumerableAttribute(RAIDAttribute):
         """Parses XML and creates RAIDEnumerableAttribute object"""
 
         raid_attr = RAIDAttribute.parse(cls.namespace, raid_attr_xml)
+        current_value = [attr.text for attr
+                         in utils.find_xml(raid_attr_xml,
+                                           'CurrentValue',
+                                           cls.namespace, find_all=True)]
         possible_values = [attr.text for attr
                            in utils.find_xml(raid_attr_xml,
                                              'PossibleValues',
                                              cls.namespace, find_all=True)]
 
         return cls(raid_attr.name, raid_attr.instance_id,
-                   raid_attr.current_value, raid_attr.pending_value,
-                   raid_attr.read_only, raid_attr.fqdd, possible_values)
+                   raid_attr.pending_value, raid_attr.read_only,
+                   raid_attr.fqdd, current_value, possible_values)
 
     def validate(self, new_value):
         """Validates new value"""
@@ -201,25 +204,26 @@ class RAIDStringAttribute(RAIDAttribute):
 
     namespace = uris.DCIM_RAIDString
 
-    def __init__(self, name, instance_id, current_value, pending_value,
-                 read_only, fqdd, min_length, max_length):
+    def __init__(self, name, instance_id, pending_value,
+                 read_only, fqdd, current_value, min_length, max_length):
         """Creates RAIDStringAttribute object
 
         :param name: name of the RAID attribute
         :param instance_id: InstanceID of the RAID attribute
-        :param current_value: current value of the RAID attribute
         :param pending_value: pending value of the RAID attribute, reflecting
                 an unprocessed change (eg. config job not completed)
         :param read_only: indicates whether this RAID attribute can be changed
         :param fqdd: Fully Qualified Device Description of the RAID
                 Attribute
+        :param current_value: list containing the current values of the
+                RAID attribute
         :param min_length: minimum length of the string
         :param max_length: maximum length of the string
         """
         super(RAIDStringAttribute, self).__init__(name, instance_id,
-                                                  current_value,
                                                   pending_value,
                                                   read_only, fqdd)
+        self.current_value = current_value
         self.min_length = min_length
         self.max_length = max_length
 
@@ -228,14 +232,18 @@ class RAIDStringAttribute(RAIDAttribute):
         """Parses XML and creates RAIDStringAttribute object"""
 
         raid_attr = RAIDAttribute.parse(cls.namespace, raid_attr_xml)
+        current_value = [attr.text for attr
+                         in utils.find_xml(raid_attr_xml,
+                                           'CurrentValue',
+                                           cls.namespace, find_all=True)]
         min_length = int(utils.get_wsman_resource_attr(
             raid_attr_xml, cls.namespace, 'MinLength'))
         max_length = int(utils.get_wsman_resource_attr(
             raid_attr_xml, cls.namespace, 'MaxLength'))
 
         return cls(raid_attr.name, raid_attr.instance_id,
-                   raid_attr.current_value, raid_attr.pending_value,
-                   raid_attr.read_only, raid_attr.fqdd, min_length, max_length)
+                   raid_attr.pending_value, raid_attr.read_only,
+                   raid_attr.fqdd, current_value, min_length, max_length)
 
 
 class RAIDManagement(object):
@@ -250,7 +258,7 @@ class RAIDManagement(object):
         """
         self.client = client
 
-    def list_raid_cntrl_settings(self, by_name=False):
+    def list_raid_controller_settings(self, by_name=False):
         """List the RAID configuration settings
 
         :param by_name: Controls whether returned dictionary uses RAID
@@ -266,15 +274,16 @@ class RAIDManagement(object):
 
         return utils.list_settings(self.client, self.NAMESPACES, by_name)
 
-    def set_raid_cntrl_settings(self, new_settings, raid_fqdd):
+    def set_raid_controller_settings(self, new_settings, raid_fqdd):
         """Sets the RAID configuration
 
         It sets the pending_value parameter for each of the attributes
         passed in. For the values to be applied, a config job must
         be created.
-        :param settings: a dictionary containing the proposed values, with
+        :param new_settings: a dictionary containing the proposed values, with
                          each key being the name of attribute and the value
                          being the proposed value.
+        :param raid_fqdd: the FQDD of the RAID.
         :returns: a dictionary containing:
                  - The is_commit_required key with a boolean value indicating
                    whether a config job must be created for the values to be
@@ -306,11 +315,11 @@ class RAIDManagement(object):
         :raises: DRACOperationFailed on error reported back by the DRAC
                  interface
         """
-        raid_cntrl_attr = self.list_raid_cntrl_settings(by_name=True)
+        raid_cntrl_attr = self.list_raid_controller_settings(by_name=True)
 
         raid_cntrl_mode = raid_cntrl_attr.get('RAIDCurrentControllerMode')
 
-        return raid_cntrl_mode.current_value
+        return raid_cntrl_mode.current_value[0]
 
     def list_raid_controllers(self):
         """Returns the list of RAID controllers

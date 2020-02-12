@@ -360,8 +360,11 @@ def set_settings(settings_type,
     candidates = set(new_settings)
 
     for attr in candidates:
-        if str(new_settings[attr]) == str(
-                current_settings[attr].current_value):
+        if settings_type == 'RAID':
+            current_setting_value = current_settings[attr].current_value[0]
+        else:
+            current_setting_value = current_settings[attr].current_value
+        if str(new_settings[attr]) == str(current_setting_value):
             unchanged_attribs.append(attr)
         elif current_settings[attr].read_only:
             read_only_keys.append(attr)

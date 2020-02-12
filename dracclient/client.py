@@ -753,7 +753,7 @@ class DRACClient(object):
         """
         return self._raid_mgmt.list_raid_controllers()
 
-    def list_raid_cntrl_settings(self, by_name=False):
+    def list_raid_controller_settings(self, by_name=False):
         """List the RAID configuration settings
 
         :param by_name: Controls whether returned dictionary uses RAID
@@ -766,9 +766,9 @@ class DRACClient(object):
         :raises: DRACOperationFailed on error reported back by the DRAC
                  interface
         """
-        return self._raid_mgmt.list_raid_cntrl_settings(by_name)
+        return self._raid_mgmt.list_raid_controller_settings(by_name)
 
-    def set_raid_cntrl_settings(self, settings, raid_fqdd):
+    def set_raid_controller_settings(self, settings, raid_fqdd):
         """Sets the RAID configuration
 
         It sets the pending_value parameter for each of the attributes
@@ -777,6 +777,7 @@ class DRACClient(object):
         :param settings: a dictionary containing the proposed values, with
                          each key being the name of attribute and the value
                          being the proposed value.
+        :param raid_fqdd: the FQDD of the RAID.
         :returns: a dictionary containing:
                  - The is_commit_required key with a boolean value indicating
                    whether a config job must be created for the values to be
@@ -789,7 +790,8 @@ class DRACClient(object):
         :raises: DRACOperationFailed on error reported back by the DRAC
                  interface
         """
-        return self._raid_mgmt.set_raid_cntrl_settings(settings, raid_fqdd)
+        return self._raid_mgmt.set_raid_controller_settings(settings,
+                                                            raid_fqdd)
 
     def get_raid_controller_mode(self):
         """Returns the current RAID controller mode

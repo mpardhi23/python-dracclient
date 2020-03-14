@@ -132,7 +132,9 @@ def get_all_wsman_resource_attrs(doc, resource_uri, attr_name, nullable=False):
 
 def build_return_dict(doc, resource_uri,
                       is_commit_required_value=None,
-                      is_reboot_required_value=None):
+                      is_reboot_required_value=None,
+                      commit_required_value=None,
+                      include_commit_required=False):
     """Builds a dictionary to be returned
 
        Build a dictionary to be returned from WSMAN operations that are not
@@ -146,9 +148,17 @@ def build_return_dict(doc, resource_uri,
     :param is_reboot_required_value: The value to be returned for
            is_reboot_required, or None if the value should be determined
            from the doc.
+    :param commit_required_value: The value to be returned for
+           commit_required, or None if the value should be determined
+           from the doc.
+    :parm include_commit_required: Indicates if the deprecated commit_required
+                                   should be returned in the result.
     :returns: a dictionary containing:
              - is_commit_required: indicates if a commit is required.
              - is_reboot_required: indicates if a reboot is required.
+             - commit_required: a deprecated key indicating if a commit is
+               required.  This key actually has a value that indicates if a
+               reboot is required.
     """
 
     if is_reboot_required_value is not None and \
@@ -169,6 +179,14 @@ def build_return_dict(doc, resource_uri,
         is_reboot_required_value = reboot_required(doc, resource_uri)
 
     result['is_reboot_required'] = is_reboot_required_value
+
+    # Include commit_required in the response for backwards compatibility
+    # TBD: Remove this parameter in the future
+    if include_commit_required:
+        if commit_required_value is None:
+            commit_required_value = is_reboot_required(doc, resource_uri)
+
+        result['commit_required'] = commit_required_value
 
     return result
 
@@ -301,7 +319,9 @@ def set_settings(settings_type,
                  cim_name,
                  target,
                  name_formatter=None,
-                 wait_for_idrac=True):
+                 include_commit_required=False,
+                 wait_for_idrac=True,
+                 by_name=True):
     """Generically handles setting various types of settings on the iDRAC
 
     This method pulls the current list of settings from the iDRAC then compares
@@ -322,10 +342,17 @@ def set_settings(settings_type,
     :param name_formatter: a method used to format the keys in the
                            returned dictionary.  By default,
                            attribute.name will be used.
+    :parm include_commit_required: Indicates if the deprecated commit_required
+                                   should be returned in the result.
     :param wait_for_idrac: indicates whether or not to wait for the
                            iDRAC to be ready to accept commands before issuing
                            the command
     :returns: a dictionary containing:
+             - The commit_required key with a boolean value indicating
+               whether a config job must be created for the values to be
+               applied.  This key actually has a value that indicates if
+               a reboot is required.  This key has been deprecated and
+               will be removed in a future release.
              - The is_commit_required key with a boolean value indicating
                whether a config job must be created for the values to be
                applied.
@@ -340,17 +367,14 @@ def set_settings(settings_type,
     :raises: DRACUnexpectedReturnValue on return value mismatch
     :raises: InvalidParameterValue on invalid new setting
     """
-
-    current_settings = list_settings(client, namespaces, by_name=True,
+    current_settings = list_settings(client, namespaces, by_name=by_name,
                                      name_formatter=name_formatter,
                                      wait_for_idrac=wait_for_idrac)
 
     unknown_keys = set(new_settings) - set(current_settings)
     if unknown_keys:
-        msg = ('Unknown %(settings_type)s attributes found: '
-               '%(unknown_keys)r' %
-               {'settings_type': settings_type,
-                'unknown_keys': unknown_keys})
+        msg = ('Unknown %(settings_type)s attributes found: %(unknown_keys)r' %
+               {'settings_type': settings_type, 'unknown_keys': unknown_keys})
         raise exceptions.InvalidParameterValue(reason=msg)
 
     read_only_keys = []
@@ -399,21 +423,26 @@ def set_settings(settings_type,
         return build_return_dict(
             None,
             resource_uri,
+            include_commit_required=include_commit_required,
             is_commit_required_value=False,
-            is_reboot_required_value=constants.RebootRequired.false)
+            is_reboot_required_value=constants.RebootRequired.false,
+            commit_required_value=False)
 
     selectors = {'CreationClassName': cim_creation_class_name,
                  'Name': cim_name,
                  'SystemCreationClassName': 'DCIM_ComputerSystem',
                  'SystemName': 'DCIM:ComputerSystem'}
-
     properties = {'Target': target,
-                  'AttributeName': attrib_names,
                   'AttributeValue': [new_settings[attr] for attr
                                      in attrib_names]}
-
+    if settings_type == 'RAID':
+        properties['AttributeName'] = [current_settings[attr].name for
+                                       attr in attrib_names]
+    else:
+        properties['AttributeName'] =  attrib_names
     doc = client.invoke(resource_uri, 'SetAttributes',
                         selectors, properties,
                         wait_for_idrac=wait_for_idrac)
 
-    return build_return_dict(doc, resource_uri)
+    return build_return_dict(doc, resource_uri,
+                             include_commit_required=include_commit_required)

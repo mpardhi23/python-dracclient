@@ -777,7 +777,7 @@ class DRACClient(object):
         :param settings: a dictionary containing the proposed values, with
                          each key being the name of attribute and the value
                          being the proposed value.
-        :param raid_fqdd: the FQDD of the RAID.
+        :param raid_fqdd: the FQDD of the RAID controller.
         :returns: a dictionary containing:
                  - The is_commit_required key with a boolean value indicating
                    whether a config job must be created for the values to be
@@ -796,7 +796,7 @@ class DRACClient(object):
     def get_raid_controller_mode(self):
         """Returns the current RAID controller mode
 
-        :returns: the current RAIDController mode
+        :returns: the current RAID controller mode
         :raises: WSManRequestFailure on request failures
         :raises: WSManInvalidResponse when receiving invalid response
         :raises: DRACOperationFailed on error reported back by the DRAC

@@ -322,11 +322,9 @@ class RAIDManagement(object):
         """
         self.client = client
 
-    def list_raid_controller_settings(self, by_name=False):
+    def list_raid_controller_settings(self):
         """List the RAID configuration settings
 
-        :param by_name: Controls whether returned dictionary uses RAID
-                        attribute name or instance_id as key.
         :returns: a dictionary with the RAID settings using InstanceID as the
                   key. The attributes are either RAIDEnumerableAttribute,
                   RAIDStringAttribute objects.
@@ -337,7 +335,7 @@ class RAIDManagement(object):
         """
 
         return utils.list_settings(self.client, self.NAMESPACES,
-                                   by_name=by_name)
+                                   by_name=False)
 
     def set_raid_controller_settings(self, new_settings, raid_fqdd):
         """Sets the RAID configuration
@@ -372,18 +370,19 @@ class RAIDManagement(object):
                                   raid_fqdd,
                                   by_name=False)
 
-    def get_raid_controller_mode(self):
+    def get_raid_controller_mode(self, raid_fqdd):
         """Returns the current RAID controller mode
 
+        :param raid_fqdd: the FQDD of the RAID controller.
         :returns: the current RAID controller mode
         :raises: WSManRequestFailure on request failures
         :raises: WSManInvalidResponse when receiving invalid response
         :raises: DRACOperationFailed on error reported back by the DRAC
                  interface
         """
-        raid_cntrl_attr = self.list_raid_controller_settings(by_name=True)
+        raid_cntrl_attr = self.list_raid_controller_settings()
 
-        raid_cntrl_mode = raid_cntrl_attr.get('RAIDCurrentControllerMode')
+        raid_cntrl_mode = raid_cntrl_attr.get('{}:RAIDCurrentControllerMode'.format(raid_fqdd))
 
         return raid_cntrl_mode.current_value[0]
 

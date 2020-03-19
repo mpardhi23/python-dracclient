@@ -753,11 +753,9 @@ class DRACClient(object):
         """
         return self._raid_mgmt.list_raid_controllers()
 
-    def list_raid_controller_settings(self, by_name=False):
+    def list_raid_controller_settings(self):
         """List the RAID configuration settings
 
-        :param by_name: Controls whether returned dictionary uses RAID
-                        attribute name or instance_id as key.
         :returns: a dictionary with the RAID settings using InstanceID as the
                   key. The attributes are either RAIDEnumerableAttribute,
                   RAIDStringAttribute objects.
@@ -766,7 +764,7 @@ class DRACClient(object):
         :raises: DRACOperationFailed on error reported back by the DRAC
                  interface
         """
-        return self._raid_mgmt.list_raid_controller_settings(by_name)
+        return self._raid_mgmt.list_raid_controller_settings()
 
     def set_raid_controller_settings(self, settings, raid_fqdd):
         """Sets the RAID configuration
@@ -793,7 +791,7 @@ class DRACClient(object):
         return self._raid_mgmt.set_raid_controller_settings(settings,
                                                             raid_fqdd)
 
-    def get_raid_controller_mode(self):
+    def get_raid_controller_mode(self, raid_fqdd):
         """Returns the current RAID controller mode
 
         :returns: the current RAID controller mode
@@ -802,7 +800,7 @@ class DRACClient(object):
         :raises: DRACOperationFailed on error reported back by the DRAC
                  interface
         """
-        return self._raid_mgmt.get_raid_controller_mode()
+        return self._raid_mgmt.get_raid_controller_mode(raid_fqdd)
 
     def list_virtual_disks(self):
         """Returns the list of RAID arrays

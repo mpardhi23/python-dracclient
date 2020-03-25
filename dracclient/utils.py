@@ -411,7 +411,7 @@ def set_settings(settings_type,
         properties['AttributeName'] = [current_settings[attr].name for
                                        attr in attrib_names]
     else:
-        properties['AttributeName'] =  attrib_names
+        properties['AttributeName'] = attrib_names
     doc = client.invoke(resource_uri, 'SetAttributes',
                         selectors, properties,
                         wait_for_idrac=wait_for_idrac)

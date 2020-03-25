@@ -253,6 +253,9 @@ RAIDEnumerations = {
     },
     uris.DCIM_RAIDString: {
         'ok': load_wsman_xml('raid_string-enum-ok')
+    },
+    uris.DCIM_RAIDInteger: {
+        'ok': load_wsman_xml('raid_integer-enum-ok')
     }
 }
 

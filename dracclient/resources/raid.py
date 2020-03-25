@@ -133,10 +133,9 @@ class RAIDAttribute(object):
             raid_attr_xml, namespace, 'AttributeName')
         instance_id = utils.get_wsman_resource_attr(
             raid_attr_xml, namespace, 'InstanceID')
-        current_value = [attr.text for attr
-                           in utils.find_xml(raid_attr_xml,
-                                             'CurrentValue',
-                                             namespace, find_all=True)]
+        current_value = [attr.text for attr in
+                         utils.find_xml(raid_attr_xml, 'CurrentValue',
+                                        namespace, find_all=True)]
         pending_value = utils.get_wsman_resource_attr(
             raid_attr_xml, namespace, 'PendingValue', nullable=True)
         read_only = utils.get_wsman_resource_attr(
@@ -256,10 +255,11 @@ class RAIDIntegerAttribute(RAIDAttribute):
 
         :param name: name of the RAID attribute
         :param instance_id: InstanceID of the RAID attribute
-        :param current_value: list containing the current value of the RAID
-		attribute
+        :param current_value: list containing the current value of the
+                RAID attribute
         :param pending_value: pending value of the RAID attribute,
-                reflecting an unprocessed change (eg. config job not completed)
+                reflecting an unprocessed change
+                (eg. config job not completed)
         :param read_only: indicates whether this RAID attribute can be
                 changed
         :param fqdd: Fully Qualified Device Description of the RAID
@@ -273,7 +273,6 @@ class RAIDIntegerAttribute(RAIDAttribute):
                                                    read_only, fqdd)
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
-
 
     @classmethod
     def parse(cls, raid_attr_xml):
@@ -382,7 +381,8 @@ class RAIDManagement(object):
         """
         raid_cntrl_attr = self.list_raid_controller_settings()
 
-        raid_cntrl_mode = raid_cntrl_attr.get('{}:RAIDCurrentControllerMode'.format(raid_fqdd))
+        raid_cntrl_mode = raid_cntrl_attr.get(
+            '{}:RAIDCurrentControllerMode'.format(raid_fqdd))
 
         return raid_cntrl_mode.current_value[0]
 

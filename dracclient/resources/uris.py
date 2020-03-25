@@ -104,7 +104,7 @@ DCIM_RAIDString = ('http://schemas.dell.com/wbem/wscim/1/cim-schema/2/'
                    'DCIM_RAIDString')
 
 DCIM_RAIDInteger = ('http://schemas.dell.com/wbem/wscim/1/cim-schema/2/'
-                   'DCIM_RAIDInteger')
+                    'DCIM_RAIDInteger')
 
 DCIM_SystemView = ('http://schemas.dell.com/wbem/wscim/1/cim-schema/2/'
                    'DCIM_SystemView')

@@ -189,7 +189,9 @@ class ClientRAIDManagementTestCase(base.BaseTest):
             {'text': test_utils.RAIDEnumerations[
                 uris.DCIM_RAIDEnumeration]['ok']},
             {'text': test_utils.RAIDEnumerations[
-                uris.DCIM_RAIDString]['ok']}])
+                uris.DCIM_RAIDString]['ok']},
+            {'text': test_utils.RAIDEnumerations[
+                uris.DCIM_RAIDInteger]['ok']}])
         mock_get_raid_controller_mode.return_value = "RAID"
         raid_cntrl_mode = self.drac_client.get_raid_controller_mode(
             self.raid_controller_fqdd)

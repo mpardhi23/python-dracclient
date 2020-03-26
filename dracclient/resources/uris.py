@@ -13,7 +13,7 @@
 
 """
 Schema definitions and resource URIs for the classes implemented by the DRAC
-WS-Man API.DCIM_RAIDEnumeration
+WS-Man API.
 """
 
 DCIM_BIOSEnumeration = ('http://schemas.dell.com/wbem/wscim/1/cim-schema/2/'
